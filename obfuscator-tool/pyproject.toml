@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "obfuscator-tool"
+version = "0.1.0"
+description = ""
+authors = ["Georgina <georgina.hardcastle@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+boto3 = "^1.40.36"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.2"
+moto = "^5.1.13"
+flake8 = "^7.3.0"
+bandit = "^1.8.6"
+black = "^25.9.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
