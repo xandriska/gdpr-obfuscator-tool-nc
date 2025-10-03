@@ -1,7 +1,12 @@
-import boto3
 
 
-def get_file_from_s3(s3_client):
-    response = (s3_client.get_object(Bucket='bucket-name', Key='file-key'))
+'''
+retrieves a file from an s3 bucket. boto3 client passed in as arg.
 
-    return response['Body'].read().decode('utf-8')
+'''
+
+
+def get_file_from_s3(s3_client, bucket, key) -> bytes:
+    response = (s3_client.get_object(Bucket=bucket, Key=key))
+
+    return response['Body'].read()
