@@ -1,44 +1,28 @@
-import csv
-import io
-import hashlib
-from typing import Dict, Any, List
+'''
+notes, thoughts, ideas, hopes & dreams:
 
-import boto3
+- tool will take its input (S3 location & field names) and pass to lambda_handler event (maybe using get_file_from_s3?). event can be a JSON object/dict with bucket &
+    key names and a list of field names to obfuscate.
 
-def obfuscate_file(input: Dict[str, Any]) -> bytes:
-    """
-    Obfuscate sensitive data in a CSV file stored in S3.
+- there will be a main obfuscate function that will be called by the lambda_handler. this function will take the event dict as input.
 
-    Args:
-        input (Dict[str, Any]): A dictionary containing:
-            - bucket (str): The S3 bucket name.
-            - key (str): The S3 object key.
-            - columns_to_obfuscate (List[str]): List of column names to obfuscate.
+- the obfuscate function will utilise smart_open to read the files directly from s3, apply obfuscation logic to the specified fields 
+    and write the obfuscated data back to s3 as a new file. 
 
-    Returns:
-        bytes: The obfuscated CSV content as bytes.
-    """
-    s3 = boto3.client('s3')
-    bucket = input['bucket']
-    key = input['key']
-    columns_to_obfuscate = input['columns_to_obfuscate']
+- the lambda handler will use the config from event and pass these variables in to the obfuscate function, returning the result ie.
 
-    # Download the file from S3
-    response = s3.get_object(Bucket=bucket, Key=key)
-    file_content = response['Body'].read().decode('utf-8')
+    def lambda_handler(event, context):
+    
+        cfg = event.get("config") or event
+        input_s3 = cfg["input_s3"]
+        output_s3 = cfg["output_s3"]
+        field_map = cfg.get("fields", {})
 
-    # Read the CSV content
-    csv_reader = csv.DictReader(io.StringIO(file_content))
-    output = io.StringIO()
-    csv_writer = csv.DictWriter(output, fieldnames=csv_reader.fieldnames)
-    csv_writer.writeheader()
+        result = obfuscate(input_s3, output_s3, field_map)
 
-    # Obfuscate specified columns
-    for row in csv_reader:
-        for column in columns_to_obfuscate:
-            if column in row and row[column]:
-                # Simple obfuscation using SHA256 hash
-                row[column] = hashlib.sha256(row[column].encode()).hexdigest()
-        csv_writer.writerow(row)
+        return result
 
-    return output.getvalue().encode('utf-8')
+
+
+
+'''
