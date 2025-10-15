@@ -60,7 +60,7 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
 
         
         
-        # missing = [col for col in field_map.keys() if col not in headers]
+        # missing = [f for f in fields_to_obfuscate if f not in headers]
 
         # if missing:
 

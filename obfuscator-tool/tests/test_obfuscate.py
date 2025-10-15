@@ -33,19 +33,47 @@ puts it into s3
 
 
 '''
-
-# test that obfuscator opens and reads a file from s3
-# test that obfuscator writes a file to s3
-# test that it creates a dictreader object from infile
 # test that it raises a valueerror if no headers in infile
-# test that it writes a new csvfile with the same headers as infile
-#           it obfuscates fields correctly
+
+# test it obfuscates fields correctly
+
+
+
 
 # expected_output = """Customer,Flavour,Size,Price
 #         ****,Chocolate,****,3.50
 #         ****,Vanilla,****,1.80
 #         ****,Strawberry,****,2.50
 #         # ****,Mint Choc Chip,****,3.70"""
+
+
+# -------- non-closing file wrapper! ------------ #
+
+class NonClosingStringIO:
+
+    def __init__(self, real_buffer):
+        self.buffer = real_buffer
+
+    def write(self, data):
+        return self.buffer.write(data)
+    
+    def read(self, *args, **kwargs):
+        return self.buffer.read(*args, **kwargs)
+    
+    def seek(self, *args, **kwargs):
+        return self.buffer.seek(*args, **kwargs)
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return False
+    
+    def close(self):
+        pass
+
+
+# --------------------------------- #
 
 def test_obfuscate_opens_csv(monkeypatch):
 
@@ -127,4 +155,71 @@ def test_obfuscate_reads_writes_from_s3():
     output_csv = response["Body"].read().decode("utf-8")
 
     assert output_csv != fake_csv
+
+
+def test_obfuscate_writes_file_with_same_headers(monkeypatch):
+
+    # arrange
+
+    test_input = "s3://test-bucket/input.csv"
+    
+    test_output = "s3://test-bucket/output.csv"
+
+    test_fields = ['Customer', 'Size']
+
+    test_output_dict = {}
+
+    expected_headers = ['Customer', 'Flavour', 'Size', 'Price']
+
+    def fake_open2(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open2)
+
+    # act
+
+    result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    buffer = test_output_dict[test_output]
+
+    buffer.seek(0)
+
+    test_written_file = buffer.read()
+
+    lines = test_written_file.splitlines()
+
+    header_row = lines[0].split(",")
+
+    # assert
+
+    assert header_row == expected_headers
+
+
+def test_obfuscate_raises_valueerror_if_headers_missing(monkeypatch):
+
+    # arrange
+
+    test_input = "s3://test-bucket/input.csv"
+    
+    test_output = "s3://test-bucket/output.csv"
+
+    test_fields = ['Customer', 'Size']
+
+    
+
+    # act
+
+    # assert
 
