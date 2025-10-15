@@ -6,9 +6,9 @@ from obfuscate import obfuscate_fields
 
 Example event shape:
        {
-         "file_to_obfuscate": 's3://my_ingestion_bucket/new_data/file1.csv',
-         "output_s3": 's3://obfuscated_files/csv/file1obfuscated.csv',
-         "pii_fields": ['name', 'email_address']
+         "file_to_obfuscate": "s3://my_ingestion_bucket/new_data/file1.csv",
+         "output_s3": "s3://obfuscated_files/csv/file1obfuscated.csv",
+         "pii_fields": ["name", "email_address"]
        }
 
 '''

@@ -19,10 +19,10 @@ notes, thoughts, ideas, hopes & dreams:
 '''
 
 import csv
-import boto3
 from smart_open import open as s3open
 
-def obfuscate_fields(input_s3: str, output_s3: str, fields_to_obfuscate: list, s3_client=None):
+def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, s3_client=None):
+
 
     # s3 URI extractor function
 
@@ -80,17 +80,25 @@ def obfuscate_fields(input_s3: str, output_s3: str, fields_to_obfuscate: list, s
             rows_processed += 1
 
 
+
+    # create an output location/filename in case none is supplied
+    if output_s3 is None:
+        
+        bucket, key = extract_s3_uri(input_s3)
+        stem, ext = key.rsplit(".", 1)
+        output_s3 = f"s3://{bucket}/{stem}_obfuscated.{ext}"
+
         # create a result dictionary for the lambda handler.
-        result = {
-            'status': 'success',
-            'input': input_s3,
-            'output': output_s3,
-            'fields obfuscated': fields_to_obfuscate,
-            'rows processed': rows_processed
+    result = {
+        'status': 'success',
+        'input': input_s3,
+        'output': output_s3,
+        'fields obfuscated': fields_to_obfuscate,
+        'rows processed': rows_processed
         }
 
-        print(f'Processed {rows_processed}. Output written to {output_s3}.')
-        return result
+    print(f'Processed {rows_processed} rows. Output written to {output_s3}.')
+    return result
 
 
 
