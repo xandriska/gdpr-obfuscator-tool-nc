@@ -30,7 +30,7 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
 
         assert uri.startswith('s3://'), 's3 URI must start with s3://'
 
-        parts = uri[:5].split('/', 1)
+        parts = uri[5:].split('/', 1)
 
         bucket = parts[0]
 
@@ -39,6 +39,13 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         return bucket, key
     
     in_bucket, in_key = extract_s3_uri(input_s3) # bucket name and key
+
+    # create an output location/filename in case none is supplied
+    if output_s3 is None:
+        
+        bucket, key = extract_s3_uri(input_s3)
+        stem, ext = key.rsplit(".", 1)
+        output_s3 = f"s3://{bucket}/{stem}_obfuscated.{ext}"
 
 
     # use smart open to read the files as bytes directly from s3.
@@ -79,14 +86,6 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
             writer.writerow([out_row.get(h, "") for h in headers])
             rows_processed += 1
 
-
-
-    # create an output location/filename in case none is supplied
-    if output_s3 is None:
-        
-        bucket, key = extract_s3_uri(input_s3)
-        stem, ext = key.rsplit(".", 1)
-        output_s3 = f"s3://{bucket}/{stem}_obfuscated.{ext}"
 
         # create a result dictionary for the lambda handler.
     result = {
