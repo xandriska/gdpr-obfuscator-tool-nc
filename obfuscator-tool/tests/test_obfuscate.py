@@ -265,7 +265,7 @@ def test_obfuscate_replaces_multiple_fields(monkeypatch):
 
     test_output_dict = {}
 
-    def fake_open3(uri, mode='r', transport_params=None):
+    def fake_open4(uri, mode='r', transport_params=None):
 
         fake_csv = """Customer,Flavour,Size,Price
         Alice,Chocolate,Large,3.50
@@ -280,7 +280,7 @@ def test_obfuscate_replaces_multiple_fields(monkeypatch):
             test_output_dict[uri] = buffer
             return NonClosingStringIO(buffer)
         
-    monkeypatch.setattr(src.obfuscate, "s3open", fake_open3)
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open4)
 
     # act
 
@@ -301,40 +301,33 @@ def test_obfuscate_replaces_multiple_fields(monkeypatch):
         assert dct['Price'] == '****'
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-def test_obfuscate_raises_valueerror_if_no_headers(monkeypatch):
-
-    # arrange
+def test_error_raised_if_csv_empty(monkeypatch):
 
     test_input = "s3://test-bucket/input.csv"
     
     test_output = "s3://test-bucket/output.csv"
 
-    test_fields = ['Customer', 'Size']
+    test_fields = ['Customer', 'Size', 'Price']
 
-    
+    test_output_dict = {}
+
+    def fake_open4(uri, mode='r', transport_params=None):
+
+        fake_csv = ""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open4)
 
     # act
 
-    # assert
+    with pytest.raises(ValueError) as e:
+        
+        result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
 
