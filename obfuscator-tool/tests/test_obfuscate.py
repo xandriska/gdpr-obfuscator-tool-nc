@@ -207,7 +207,122 @@ def test_obfuscate_writes_file_with_same_headers(monkeypatch):
     assert header_row == expected_headers
 
 
-def test_obfuscate_raises_valueerror_if_headers_missing(monkeypatch):
+def test_obfuscate_replaces_single_fields(monkeypatch):
+
+    #arrange
+
+    test_input = "s3://test-bucket/input.csv"
+    
+    test_output = "s3://test-bucket/output.csv"
+
+    test_fields = ['Customer']
+
+    test_output_dict = {}
+
+    def fake_open3(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open3)
+
+    # act
+
+    result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    buffer = test_output_dict[test_output]
+
+    buffer.seek(0)
+
+    test_output_file = buffer.read()
+
+    f = io.StringIO(test_output_file)
+    test_output_lst_dcts = list(csv.DictReader(f))
+
+    for dct in test_output_lst_dcts:
+        assert dct['Customer'] == '****'
+
+
+def test_obfuscate_replaces_multiple_fields(monkeypatch):
+
+    #arrange
+
+    test_input = "s3://test-bucket/input.csv"
+    
+    test_output = "s3://test-bucket/output.csv"
+
+    test_fields = ['Customer', 'Size', 'Price']
+
+    test_output_dict = {}
+
+    def fake_open3(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open3)
+
+    # act
+
+    result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    buffer = test_output_dict[test_output]
+
+    buffer.seek(0)
+
+    test_output_file = buffer.read()
+
+    f = io.StringIO(test_output_file)
+    test_output_lst_dcts = list(csv.DictReader(f))
+
+    for dct in test_output_lst_dcts:
+        assert dct['Customer'] == '****'
+        assert dct['Size'] == '****'
+        assert dct['Price'] == '****'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def test_obfuscate_raises_valueerror_if_no_headers(monkeypatch):
 
     # arrange
 

@@ -55,9 +55,6 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         reader = csv.DictReader(fin)
         headers = reader.fieldnames
 
-        if not headers:
-            raise ValueError('input CSV must have a header row')
-
         
         
         # missing = [f for f in fields_to_obfuscate if f not in headers]
