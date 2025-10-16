@@ -38,10 +38,12 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
 
         return bucket, key
     
-    in_bucket, in_key = extract_s3_uri(input_s3) # bucket name and key
+    #in_bucket, in_key = extract_s3_uri(input_s3) # bucket name and key
+
+    print(extract_s3_uri(input_s3))
 
     # create an output location/filename in case none is supplied
-    if output_s3 is None:
+    if not output_s3:
         
         bucket, key = extract_s3_uri(input_s3)
         stem, ext = key.rsplit(".", 1)
@@ -58,11 +60,11 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         if not headers:
             raise ValueError
         
-        # missing = [f for f in fields_to_obfuscate if f not in headers]
+        missing = [f for f in fields_to_obfuscate if f not in headers]
 
-        # if missing:
+        if missing:
 
-        #     raise ValueError(f'Fields not in CSV headers: {missing}')
+            raise ValueError(f'Fields not in CSV headers: {missing}')
 
         
         rows_processed = 0

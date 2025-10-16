@@ -328,6 +328,119 @@ def test_error_raised_if_csv_empty(monkeypatch):
 
     with pytest.raises(ValueError) as e:
         
-        result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+        obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
 
 
+def test_error_raised_if_wrong_fields(monkeypatch):
+
+    #arrange
+
+    test_input = "s3://test-bucket/input.csv"
+    
+    test_output = "s3://test-bucket/output.csv"
+
+    test_fields = ['Name', 'Email', 'Phone']
+
+    test_output_dict = {}
+
+    def fake_open5(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open5)
+
+    # act
+
+    with pytest.raises(ValueError) as excinfo:
+        
+        obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    message = str(excinfo.value)
+    assert "Fields not in CSV headers:" in message
+    assert "Name" in message
+    assert "Email" in message
+
+
+def test_obfuscate_creates_output_path_if_none(monkeypatch):
+
+    # arrange
+
+    test_input = "s3://test-bucket/input.csv"
+
+    test_fields = ["Customer", "Size"]
+
+    test_output_dict = {}
+
+    def fake_open5(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open5)
+
+    # act
+
+    result = obfuscate_fields(test_input, None, test_fields, s3_client=None)
+
+    # assert
+
+    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+
+
+def test_obfuscate_creates_output_path_if_empty(monkeypatch):
+
+    # arrange
+
+    test_input = "s3://test-bucket/input.csv"
+
+    test_fields = ["Customer", "Size"]
+
+    test_output = ""
+
+    test_output_dict = {}
+
+    def fake_open6(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open6)
+
+    # act
+
+    result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    # assert
+
+    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
