@@ -39,14 +39,6 @@ puts it into s3
 
 
 
-
-# expected_output = """Customer,Flavour,Size,Price
-#         ****,Chocolate,****,3.50
-#         ****,Vanilla,****,1.80
-#         ****,Strawberry,****,2.50
-#         # ****,Mint Choc Chip,****,3.70"""
-
-
 # -------- non-closing file wrapper! ------------ #
 
 class NonClosingStringIO:

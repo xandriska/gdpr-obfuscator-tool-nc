@@ -1,6 +1,7 @@
 import boto3
-import moto
+from moto import mock_aws
 import pytest
+from io import BytesIO
 
 from src.lambda_handler import lambda_handler
 
@@ -33,6 +34,8 @@ def test_lambda_success_if_output(monkeypatch):
 
 
 def test_lambda_success_if_no_output(monkeypatch):
+
+    # arrange
     event = {
         "input_s3": "s3://test-bucket/input.csv",
         "pii_fields": ["name", "email"]
@@ -49,6 +52,125 @@ def test_lambda_success_if_no_output(monkeypatch):
 
     monkeypatch.setattr("src.lambda_handler.obfuscate_fields", fake_obfuscate)
 
+    # act
+
     result = lambda_handler(event, None)
+
+    # assert
     assert result == fake_result
+
+
+def test_lambda_handler_error_no_input():
+
+    # arrange
+    event = {
+        "output_s3": "s3://bucket/output.csv",
+        "pii_fields": ["name"]
+    }
+
+    # act
+    result = lambda_handler(event, None)
+
+    # assert
+    assert result["status"] == "error"
+    assert "'input_s3' key is required" in result["message"]
+
+
+def test_lambda_handler_missing_fields():
+
+    # arrange
+    event = {
+        "input_s3": "s3://bucket/input.csv",
+        "output_s3": "s3://bucket/output.csv",
+    }
+
+    # act
+    result = lambda_handler(event, None)
+
+    # assert
+    assert result["status"] == "error"
+    assert "'pii_fields' key is required" in result["message"]
+
+
+@mock_aws
+def test_lambda_handler_with_moto_no_output():
+    
+    # arrange
+    s3 = boto3.client('s3')
+    location = {'LocationConstraint': 'eu-west-2'}
+    s3.create_bucket(Bucket="test-bucket", CreateBucketConfiguration=location)
+
+    
+    test_body = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+    
+    s3.put_object(Bucket="test-bucket", Key="input.csv", Body=test_body)
+
+    
+    event = {
+        "input_s3": "s3://test-bucket/input.csv",
+        "pii_fields": ["Customer"]
+    }
+
+    # act
+    result = lambda_handler(event, None)
+
+    # assert
+    assert result["status"] == "success"
+    assert result["rows processed"] == 4
+    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+
+    
+    response = s3.get_object(Bucket="test-bucket", Key="input_obfuscated.csv")
+    content = response['Body'].read().decode('utf-8')
+
+    
+    assert "****" in content
+    assert "Flavour" in content
+    assert "Strawberry" in content
+
+
+@mock_aws
+def test_lambda_handler_with_moto_with_output():
+    
+    # arrange
+    s3 = boto3.client('s3')
+    location = {'LocationConstraint': 'eu-west-2'}
+    s3.create_bucket(Bucket="test-bucket", CreateBucketConfiguration=location)
+
+    
+    test_body = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+    
+    s3.put_object(Bucket="test-bucket", Key="input.csv", Body=test_body)
+
+    
+    event = {
+        "input_s3": "s3://test-bucket/input.csv",
+        "output_s3": "s3://test-bucket/output.csv",
+        "pii_fields": ["Customer"]
+    }
+
+    # act
+    result = lambda_handler(event, None)
+
+    # assert
+    assert result["status"] == "success"
+    assert result["rows processed"] == 4
+    assert result["output"] == "s3://test-bucket/output.csv"
+
+    
+    response = s3.get_object(Bucket="test-bucket", Key="output.csv")
+    content = response['Body'].read().decode('utf-8')
+
+    
+    assert "****" in content
+    assert "Flavour" in content
+    assert "Strawberry" in content
 
