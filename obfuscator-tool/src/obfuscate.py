@@ -23,7 +23,6 @@ from smart_open import open as s3open
 
 def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, s3_client=None):
 
-
     # s3 URI extractor function
 
     def extract_s3_uri(uri):
@@ -37,10 +36,6 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         key = parts[1] if len(parts) > 1 else ''
 
         return bucket, key
-    
-    #in_bucket, in_key = extract_s3_uri(input_s3) # bucket name and key
-
-    print(extract_s3_uri(input_s3))
 
     # create an output location/filename in case none is supplied
     if not output_s3:
@@ -50,16 +45,18 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         output_s3 = f"s3://{bucket}/{stem}_obfuscated.{ext}"
 
 
-    # use smart open to read the files as bytes directly from s3.
+    # use smart open to stream the files as bytes directly from s3.
     with s3open(input_s3, 'r', transport_params={'client': s3_client}) as fin, \
          s3open(output_s3, 'w', transport_params={'client': s3_client}) as fout:
         
         reader = csv.DictReader(fin)
         headers = reader.fieldnames
 
+        # an error is raised if the csv has no header row.
         if not headers:
             raise ValueError
         
+        # an error is raised if the requested fields do not exist in input file.
         missing = [f for f in fields_to_obfuscate if f not in headers]
 
         if missing:
@@ -69,25 +66,23 @@ def obfuscate_fields(input_s3: str, output_s3: None, fields_to_obfuscate: list, 
         
         rows_processed = 0
 
-        # create variables to store the output file and give it the same headers as the input
+        # create variables to store the output file and give it the same headers as the input.
         writer = csv.writer(fout)
         writer.writerow(headers)
 
-        # for every row in the dictreader, create a copy (out_row), then iterate over the fields to obfuscate and compare to out_row. if the fields
-        # are in the row, index that field and replace it with '****'.
-
-        # then write the new out_row to the csv writer output file and increase the rows_processed counter.
+        # iterate over dictreader copy and obfuscate requested fields.
         for row in reader:
             out_row = row.copy()
             for field in fields_to_obfuscate:
                 if field in out_row:
                     out_row[field] = '****'
 
+            # write new values into file.
             writer.writerow([out_row.get(h, "") for h in headers])
             rows_processed += 1
 
 
-        # create a result dictionary for the lambda handler.
+    # create a result dictionary for the lambda handler.
     result = {
         'status': 'success',
         'input': input_s3,

@@ -444,3 +444,40 @@ def test_obfuscate_creates_output_path_if_empty(monkeypatch):
     # assert
 
     assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+
+
+def test_obfuscate_rejects_bad_uri(monkeypatch):
+
+    test_input = "s3:/test-bucket/input.csv"
+
+    test_output = ""
+
+    test_fields = ["Customer", "Size"]
+
+    test_output_dict = {}
+
+    def fake_open7(uri, mode='r', transport_params=None):
+
+        fake_csv = """Customer,Flavour,Size,Price
+        Alice,Chocolate,Large,3.50
+        Bob,Vanilla,Small,1.80
+        Charlie,Strawberry,Medium,2.50
+        Diana,Mint Choc Chip,Large,3.70"""
+
+        if mode == 'r':
+            return io.StringIO(fake_csv)
+        elif mode == 'w':
+            buffer = io.StringIO()
+            test_output_dict[uri] = buffer
+            return NonClosingStringIO(buffer)
+        
+    monkeypatch.setattr(src.obfuscate, "s3open", fake_open7)
+
+    # act
+
+    # assert
+
+    with pytest.raises(AssertionError) as e:
+        result = obfuscate_fields(test_input, test_output, test_fields, s3_client=None)
+
+    

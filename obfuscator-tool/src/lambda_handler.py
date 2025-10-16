@@ -1,12 +1,12 @@
 import boto3
 
-from obfuscate import obfuscate_fields
+from src.obfuscate import obfuscate_fields
 
 '''
 
 Example event shape:
        {
-         "file_to_obfuscate": "s3://my_ingestion_bucket/new_data/file1.csv",
+         "input_s3": "s3://ingestion_bucket/new_data/file1.csv",
          "output_s3": "s3://obfuscated_files/csv/file1obfuscated.csv",
          "pii_fields": ["name", "email_address"]
        }
@@ -16,11 +16,16 @@ s3_client = boto3.client('s3')
 
 def lambda_handler(event, context):
 
-    input_s3 = event['file_to_obfuscate']
+    try:
+        input_s3 = event['input_s3']
+    except KeyError:
+        return {"status": "error", "message": "'input_s3' key is required in event"}
 
-    output_s3 = event['output_s3']
+    output_s3 = event.get('output_s3')
 
-    fields = event['pii_fields']
+    fields = event.get('pii_fields')
+    if not fields:
+        return {"status": "error", "message": "'pii_fields' key is required and cannot be empty"}
 
     return obfuscate_fields(input_s3, output_s3, fields, s3_client)
     
