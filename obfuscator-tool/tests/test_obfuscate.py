@@ -69,7 +69,7 @@ def test_obfuscate_opens_csv(monkeypatch):
 
     # assert
 
-    assert result["rows processed"] == 4
+    assert result["Rows processed"] == 4
 
 
 @mock_aws
@@ -372,7 +372,7 @@ def test_obfuscate_creates_output_path_if_none(monkeypatch):
 
     # assert
 
-    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+    assert result["Output"] == "s3://test-bucket/input_obfuscated.csv"
 
 
 def test_obfuscate_creates_output_path_if_empty(monkeypatch):
@@ -411,7 +411,7 @@ def test_obfuscate_creates_output_path_if_empty(monkeypatch):
 
     # assert
 
-    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+    assert result["Output"] == "s3://test-bucket/input_obfuscated.csv"
 
 
 def test_obfuscate_rejects_bad_uri(monkeypatch):
