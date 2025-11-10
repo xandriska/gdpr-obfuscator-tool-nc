@@ -13,7 +13,7 @@ def test_lambda_success_if_output(monkeypatch):
         "pii_fields": ["name", "email_address"],
     }
 
-    expected_result = {"status": "success"}
+    expected_result = {"Status": "Success"}
 
     def fake_obfuscate(input_s3, output_s3, fields, s3_client=None):
         assert input_s3 == event["input_s3"]
@@ -36,7 +36,7 @@ def test_lambda_success_if_no_output(monkeypatch):
     # arrange
     event = {"input_s3": "s3://test-bucket/input.csv",
              "pii_fields": ["name", "email"]}
-    fake_result = {"status": "success"}
+    fake_result = {"Status": "Success"}
 
     def fake_obfuscate(input_s3, output_s3, fields, s3_client=None):
         if not output_s3:
@@ -108,9 +108,9 @@ def test_lambda_handler_with_moto_no_output():
     result = lambda_handler(event, None)
 
     # assert
-    assert result["status"] == "success"
-    assert result["rows processed"] == 4
-    assert result["output"] == "s3://test-bucket/input_obfuscated.csv"
+    assert result["Status"] == "Success"
+    assert result["Rows processed"] == 4
+    assert result["Output"] == "s3://test-bucket/input_obfuscated.csv"
 
     response = s3.get_object(Bucket="test-bucket", Key="input_obfuscated.csv")
     content = response["Body"].read().decode("utf-8")
@@ -146,9 +146,9 @@ def test_lambda_handler_with_moto_with_output():
     result = lambda_handler(event, None)
 
     # assert
-    assert result["status"] == "success"
-    assert result["rows processed"] == 4
-    assert result["output"] == "s3://test-bucket/output.csv"
+    assert result["Status"] == "Success"
+    assert result["Rows processed"] == 4
+    assert result["Output"] == "s3://test-bucket/output.csv"
 
     response = s3.get_object(Bucket="test-bucket", Key="output.csv")
     content = response["Body"].read().decode("utf-8")
