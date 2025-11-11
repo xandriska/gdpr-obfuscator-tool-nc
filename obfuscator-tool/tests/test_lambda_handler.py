@@ -1,7 +1,7 @@
 import boto3
 from moto import mock_aws
 
-from src.lambda_handler import lambda_handler
+from src.lambda_function import lambda_handler
 
 
 def test_lambda_success_if_output(monkeypatch):
@@ -21,7 +21,7 @@ def test_lambda_success_if_output(monkeypatch):
         assert fields == event["pii_fields"]
         return expected_result
 
-    monkeypatch.setattr("src.lambda_handler.obfuscate_fields", fake_obfuscate)
+    monkeypatch.setattr("src.lambda_function.obfuscate_fields", fake_obfuscate)
 
     # act
 
@@ -46,7 +46,7 @@ def test_lambda_success_if_no_output(monkeypatch):
         assert output_s3 == "s3://test-bucket/input_obfuscated.csv"
         return fake_result
 
-    monkeypatch.setattr("src.lambda_handler.obfuscate_fields", fake_obfuscate)
+    monkeypatch.setattr("src.lambda_function.obfuscate_fields", fake_obfuscate)
 
     # act
 
