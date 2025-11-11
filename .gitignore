@@ -211,3 +211,4 @@ __marimo__/
 package/
 dist/
 *.zip
+lambda_build/

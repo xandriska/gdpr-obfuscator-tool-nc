@@ -66,24 +66,36 @@ AWS Lambda functions need appropriate permissions and IAM policies to interact w
 To view and interact with the source code, clone or fork this repo. Then, to run the code locally, write these commands into the terminal:
 
 ```
-pip install -r requirements.txt
+cd obfuscator-tool
+```
+
+Create a virtual environment and activate it:
+
+```
+python -m venv venv
 ```
 
 ```
-cd obfuscator-tool
+source venv/bin/activate
 ```
+
+Install dependencies:
+
+```
+pip install -r requirements.txt
+```
+
+If you have appropriate AWS credentials and a file to process, you may run this command to print the result of the obfuscator tool. The data here is just an example; please use your own S3 URI and header fields.
 
 ```
 python -c "from src.obfuscate import obfuscate_fields; print(obfuscate_fields('s3://bucket/input.csv', None, ['name']))"
 ```
 
-(Replace the S3 URI and fields shown here with real data.)
-
 The deployment code is located in the downloadable `gdpr-obfuscator-gh.zip` file shown in Assets on the Release page for this project. This file can be uploaded directly to AWS Lambda and deployed in the AWS console, subject to credentials and permissions.
 
 ## Running Tests
 
-This project is unit tested with `monkeypatch` and `moto`. To run the test suite, please use Pytest:
+This project is unit tested with `monkeypatch` and `moto`. To run the test suite, please navigate to the tests folder and use Pytest:
 
 ```
 pytest -v
