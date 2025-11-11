@@ -1,8 +1,20 @@
 import boto3
+import pytest
+import os
 from moto import mock_aws
 
+import src.lambda_function
 from src.lambda_function import lambda_handler
 
+
+@pytest.fixture(scope="function")
+def aws_credentials():
+    """Mocked AWS Credentials for moto."""
+    os.environ["AWS_ACCESS_KEY_ID"] = "testing"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
+    os.environ["AWS_SECURITY_TOKEN"] = "testing"
+    os.environ["AWS_SESSION_TOKEN"] = "testing"
+    os.environ["AWS_DEFAULT_REGION"] = "eu-west-2"
 
 def test_lambda_success_if_output(monkeypatch):
 
@@ -86,7 +98,7 @@ def test_lambda_handler_missing_fields():
 
 
 @mock_aws
-def test_lambda_handler_with_moto_no_output():
+def test_lambda_handler_with_moto_no_output(monkeypatch):
 
     # arrange
     s3 = boto3.client("s3")
@@ -103,6 +115,8 @@ def test_lambda_handler_with_moto_no_output():
 
     event = {"input_s3": "s3://test-bucket/input.csv",
              "pii_fields": ["Customer"]}
+    
+    monkeypatch.setattr(src.lambda_function, "s3_client", s3)
 
     # act
     result = lambda_handler(event, None)
@@ -121,7 +135,7 @@ def test_lambda_handler_with_moto_no_output():
 
 
 @mock_aws
-def test_lambda_handler_with_moto_with_output():
+def test_lambda_handler_with_moto_with_output(monkeypatch):
 
     # arrange
     s3 = boto3.client("s3")
@@ -141,6 +155,8 @@ def test_lambda_handler_with_moto_with_output():
         "output_s3": "s3://test-bucket/output.csv",
         "pii_fields": ["Customer"],
     }
+
+    monkeypatch.setattr(src.lambda_function, "s3_client", s3)
 
     # act
     result = lambda_handler(event, None)
