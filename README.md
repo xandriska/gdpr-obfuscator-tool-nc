@@ -91,7 +91,7 @@ If you have appropriate AWS credentials and a file to process, you may run this 
 python -c "from src.obfuscate import obfuscate_fields; print(obfuscate_fields('s3://bucket/input.csv', None, ['name']))"
 ```
 
-The deployment code is located in the downloadable `gdpr-obfuscator-gh.zip` file shown in Assets on the Release page for this project. This file can be uploaded directly to AWS Lambda and deployed in the AWS console, subject to credentials and permissions.
+The deployment code is located in the downloadable `gdpr-obfuscator-tool-gh.zip` file shown in Assets on the Release page for this project. This file can be uploaded directly to AWS Lambda and deployed in the AWS console, subject to credentials and permissions.
 
 ## Running Tests
 
